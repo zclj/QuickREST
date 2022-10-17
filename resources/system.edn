@@ -1,0 +1,3 @@
+{:ig/system
+ {:quickrest.alpha.resources.xtdb/xt-node
+  {}}}

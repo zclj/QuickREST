@@ -1,0 +1,68 @@
+{:paths ["src" "resources"]
+
+ :deps {org.clojure/clojure {:mvn/version "1.11.0"}
+
+        ;; lifecycle
+        integrant/integrant {:mvn/version "0.8.0"}
+
+        ;; logging
+        org.clojure/tools.logging      {:mvn/version "1.2.4"}
+        ch.qos.logback/logback-classic {:mvn/version "1.2.10"}
+
+        ;; config
+        ;; - https://github.com/juxt/aero
+        aero/aero {:mvn/version "1.1.6"}
+
+        ;; spec
+        metosin/malli {:mvn/version "0.8.0"}
+
+        ;; XT
+        com.xtdb/xtdb-core {:mvn/version "1.21.0-beta1"}
+        ;;com.xtdb/xtdb-rocksdb     {:mvn/version "1.20.0"}
+
+        ;; json
+        cheshire/cheshire {:mvn/version "5.10.2"}
+
+        ;; http
+        clj-http/clj-http {:mvn/version "3.12.3"}
+        ;; for :as :x-www-form-urlencoded
+        ring/ring-codec   {:mvn/version "1.2.0"}
+
+        ;; graphs
+        ;; - https://github.com/Engelberg/ubergraph
+        ubergraph/ubergraph {:mvn/version "0.8.2"}
+
+        ;; yes, test.check is a application dependency
+        org.clojure/test.check {:mvn/version "1.1.1"}
+
+        ;; CLI
+        ;; - https://github.com/clojure/tools.cli
+        org.clojure/tools.cli {:mvn/version "1.0.206"}
+        }
+
+ :aliases {:test
+           {:extra-paths ["test"]
+            :extra-deps  {;;org.clojure/test.check               {:mvn/version "1.1.1"}
+                          lambdaisland/kaocha           {:mvn/version "1.64.1010"}
+                          lambdaisland/kaocha-cloverage {:mvn/version "1.0.75"}}}
+
+           :dev
+           {:extra-paths ["env/dev/clj" "env/dev/resources"]
+            :extra-deps  {;; https://github.com/babashka/SCI
+                          org.babashka/sci           {:mvn/version "0.3.1"}
+                          ;; https://github.com/gfredericks/test.chuck
+                          com.gfredericks/test.chuck {:mvn/version "0.2.13"}
+                          }
+            :main-opts   []}
+
+           :run-tests
+           {:extra-paths ["env/test/resources"]
+            :extra-deps  {io.github.cognitect-labs/test-runner 
+                          {:git/tag "v0.5.0" :git/sha "b3fd0d2"}}
+            :exec-fn     cognitect.test-runner.api/test
+            :main-opts   ["-m" "cognitect.test-runner"]}
+
+           :build
+           {:deps       {io.github.clojure/tools.build
+                         {:git/tag "v0.8.2" :git/sha "ba1a2bf"}}
+            :ns-default build}}}
