@@ -1,1 +1,8 @@
 *~
+
+# clojure tooling
+.cpcache
+.nrepl-port
+.calva
+.clj-kondo
+.lsp
