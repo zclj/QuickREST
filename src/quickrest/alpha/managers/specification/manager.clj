@@ -5,19 +5,22 @@
             [quickrest.alpha.resources.schema :as rsc]
             [quickrest.alpha.resources.system-specification :as rsy]
             [quickrest.alpha.resources.amos :as ram]
-            [quickrest.alpha.resources.xtdb :as rxt]))
+            [quickrest.alpha.resources.xtdb :as rxt]
+            [clojure.tools.logging :as log]))
 
 (defn transform
   [acquire-f transform-f input-schema target-schema]
   (let [spec (acquire-f)]
-    (if-not (us/validate input-schema spec {})
-      (merge (us/humanize input-schema spec {})
-             {:workflow/failure :invalid-transformation-input})
-      (let [transformed (transform-f spec)]
-        (if-not (us/validate target-schema transformed {})
-          (merge (us/humanize target-schema transformed {})
-                 {:workflow/failure :invalid-transformation-output})
-          transformed)))))
+    (if (:workflow/failure spec)
+      spec
+      (if-not (us/validate input-schema spec {})
+        (merge (us/humanize input-schema spec {})
+               {:workflow/failure :invalid-transformation-input})
+        (let [transformed (transform-f spec)]
+          (if-not (us/validate target-schema transformed {})
+            (merge (us/humanize target-schema transformed {})
+                   {:workflow/failure :invalid-transformation-output})
+            transformed))))))
 
 (def Source [:enum :source/file :source/url])
 
@@ -27,9 +30,20 @@
         (transform
          (if (= source-type :source/file)
            #(rsy/open-api-from-file-path source-name)
-           #(-> source-name
-                rsy/open-api-from-url
-                rsy/open-api-from-json-string))
+           #(try
+              (-> source-name
+                  rsy/open-api-from-url
+                  rsy/open-api-from-json-string)
+              (catch java.net.ConnectException _
+                (log/error
+                 (str "Could not connect to url when fetching OpenAPI Specification. URL: "
+                      source-name))
+                {:workflow/failure :could-not-connect-to-url})
+              (catch java.net.UnknownHostException e
+                (log/error
+                 (str "Could not connect to url when fetching OpenAPI Specification. Unknown host: "
+                      (.getMessage e)))
+                {:workflow/failure :could-not-connect-to-url})))
          #(eoas/open-api-v2->amos (fn [_] (random-uuid)) spec-name %)
          eoas/OpenAPIV2Specification
          ram/AMOS)]
