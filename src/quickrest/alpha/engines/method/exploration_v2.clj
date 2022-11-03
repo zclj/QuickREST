@@ -47,7 +47,6 @@
           (rar/invoke-url
            (fn [r]
              ;;(log/info (str "Request : ") r)
-             ;; Request: {:method :get, :as :json-string-keys, :url "http://rest-go:50104/api/percentTotalProjectsFlaggedByYear?contrMethod=[#{:_/!?9}]&tenderLoc=#{(?d/+*.) #{-2 -204810759688N :-n8}}&procuringEntityDepartmentId=#{0.25 [-6569583N]}&flagged=true&monthly=true"}
              (println (str "Request: " r))
              (try
                (let [processed-request
