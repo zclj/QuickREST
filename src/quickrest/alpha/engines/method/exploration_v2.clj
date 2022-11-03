@@ -59,6 +59,10 @@
                  (log/info (str "HTTP Response code : " (:status selected-response)))
                  
                  selected-response)
+               (catch java.net.ConnectException e
+                 (log/error (str "HTTP Exception " (.getMessage e)))
+                 (log/info "Possible configuration error")
+                 {:execution/failure {:http/exception (.getMessage e)}})
                (catch Exception e
                  (log/error (str "HTTP Exception " (.getMessage e)))
                  {:execution/failure {:http/exception (.getMessage e)}})))
