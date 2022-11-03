@@ -1,6 +1,7 @@
 *~
 target
 log
+out
 
 # clojure tooling
 .cpcache
