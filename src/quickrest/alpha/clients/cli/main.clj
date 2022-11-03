@@ -103,20 +103,24 @@
                             (:quickrest.alpha.resources.xtdb/xt-node system)
                             (or (:url options) (:file options))
                             (if (:url options) :source/url :source/file)
-                            "No name")
-        ;; 2. explore a property
-        exploration-result (om/explore-properties
-                            (:quickrest.alpha.resources.xtdb/xt-node system)
-                            (:transformation/amos-id service-amos)
-                            {:http/scheme  :http
-                             :request/host (.getHostName (:hostname options))
-                             :request/port (:port options)
-                             :nrof-tests   (:tests options)
-                             :max-seq-size (:max-seq-size options)
-                             :min-seq-size (:min-seq-size options)}
-                            (map keyword (:behavior options)))]
-    (clojure.pprint/pprint exploration-result)
-    (exit 0 "Exploration Done!")))
+                            "No name")]
+    (if-let [failure (:workflow/failure service-amos)]
+      (do
+        (clojure.pprint/pprint failure)
+        (exit -1 "Exploration Failed!"))
+      ;; 2. explore a property
+      (let [exploration-result (om/explore-properties
+                                (:quickrest.alpha.resources.xtdb/xt-node system)
+                                (:transformation/amos-id service-amos)
+                                {:http/scheme  :http
+                                 :request/host (.getHostName (:hostname options))
+                                 :request/port (:port options)
+                                 :nrof-tests   (:tests options)
+                                 :max-seq-size (:max-seq-size options)
+                                 :min-seq-size (:min-seq-size options)}
+                                (map keyword (:behavior options)))]
+        (clojure.pprint/pprint exploration-result)
+        (exit 0 "Exploration Done!")))))
 
 (defn main
   [system args]
