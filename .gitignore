@@ -1,4 +1,6 @@
 *~
+target
+log
 
 # clojure tooling
 .cpcache
