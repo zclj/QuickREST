@@ -4,7 +4,9 @@
             [xtdb.api :as xt]
             [quickrest.alpha.resources.xtdb :as rxt]
             [quickrest.alpha.managers.specification.manager :as sm]
-            [quickrest.alpha.managers.objective.manager :as om]))
+            [quickrest.alpha.managers.objective.manager :as om]
+            [quickrest.alpha.resources.exploration.result :as res]
+            [quickrest.alpha.resource-access.report.pretty :as rp]))
 
 (defn generate
   ([schema]
@@ -28,6 +30,11 @@
   [query & args]
   (apply rxt/q (db) query args))
 
+(comment
+  (q
+   '{:find  [(pull e [*])]
+     :where [[e :exploration/id]]})
+  )
 (defn put!
   [m]
   (rxt/submit-tx-await (xt-node) [[::xt/put m]]))
@@ -109,3 +116,25 @@
   (explore-properties [:state-mutation] 10 0 0)
   (explore-properties [:state-identity] 10 0 0)
   (explore-properties [:fuzz] 10 0 0))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Results
+
+(defn results []
+  (res/results (db) '[*]))
+
+(defn result-ids []
+  (res/results (db) '[:exploration/id]))
+
+(defn pretty-report [{:keys [:exploration/id]}]
+  (rp/report (db) id))
+
+(defn pretty-reports []
+  (mapv pretty-report (result-ids)))
+
+(comment
+  (defn prototype-report []
+    (mapv
+     #(quickrest.alpha.resource-access.report.next/report (db) (:exploration/id %))
+     (result-ids)))
+  )
