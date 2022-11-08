@@ -475,6 +475,7 @@
   (cond
     (get schema "type") (json-property->schema schema)
     (get schema "properties") (json-object->schema schema)
+    (get schema "$ref") (json-property->schema schema)
     :else :any))
 
 (comment
