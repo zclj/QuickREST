@@ -38,6 +38,9 @@
         ;; CLI
         ;; - https://github.com/clojure/tools.cli
         org.clojure/tools.cli {:mvn/version "1.0.206"}
+
+        ;; HTML templating
+        selmer/selmer {:mvn/version "1.12.55"}
         }
 
  :aliases {:test

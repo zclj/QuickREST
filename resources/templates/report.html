@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exploration Report</title>
+
+  <!-- styles -->
+  {% style "./css/bulma.min.css" %}
+  {% style "/assets/material-icons/css/material-icons.min.css" %}
+
+  {% style "/css/screen.css" %}
+</head>
+
+<body>
+  <section class="hero is-link">
+    <div class="hero-body">
+      <p class="title">
+        Exploration Report
+      </p>
+      <p class="subtitle">
+        Making it Awesome!
+      </p>
+    </section>
+      <div class="container">
+        {% block content %}
+        {% endblock %}
+      </div>
+  
+
+  <!-- scripts -->
+  <script type="text/javascript">
+  </script>
+
+
+  {% block page-scripts %}
+  {% endblock %}
+</body>
+
+</html>

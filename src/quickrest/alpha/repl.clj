@@ -6,7 +6,8 @@
             [quickrest.alpha.managers.specification.manager :as sm]
             [quickrest.alpha.managers.objective.manager :as om]
             [quickrest.alpha.resources.exploration.result :as res]
-            [quickrest.alpha.resource-access.report.pretty :as rp]))
+            [quickrest.alpha.resource-access.report.pretty :as rp]
+            [quickrest.alpha.resources.amos :as amos]))
 
 (defn generate
   ([schema]
@@ -137,4 +138,16 @@
     (mapv
      #(quickrest.alpha.resource-access.report.next/report (db) (:exploration/id %))
      (result-ids)))
+  )
+
+(comment
+  (amos/amoses (db) '[*])
+
+  (amos/domain (db) amos-id)
+
+  (amos/definitions (db) amos-id '[*])
+
+  (amos/operations (db) amos-id '[*])
+
+  (count (amos/operations (db) amos-id '[*]))
   )
