@@ -13,26 +13,86 @@
   </div>
   {% for op in operations %}
   <div class="box">
-    <h3>{{op.name}}</h3>
-    <button class="button is-success">
-      {{op.method | capitalize}}
-    </button>
-    <h4>{{op.url}}</h4>
+    <!-- style="border: 1px solid black; border-radius: 2px" -->
+    <div>
+      <h3 class="">{{op.name}}</h3>
+
+      <table class="table is-striped">
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>URL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              {% ifequal op.method "post" %}
+              <button class="button is-success is-small">
+                {{op.method | upper}}
+              </button>
+              {% endifequal %}
+              {% ifequal op.method "get" %}
+              <button class="button is-info is-small">
+                {{op.method | upper}}
+              </button>
+              {% endifequal %}
+              {% ifequal op.method "delete" %}
+              <button class="button is-danger is-small">
+                {{op.method | upper}}
+              </button>
+              {% endifequal %}
+              {% ifequal op.method "put" %}
+              <button class="button is-warning is-small">
+                {{op.method | upper}}
+              </button>
+              {% endifequal %}
+            </td>
+            <td> <b class="is-size-5">{{op.url}}</b></td>
+            <td>{{p.schema}}</td>
+          </tr>
+        </tbody>
+      </table>
+
+
+      </table>
+    </div>
+    <hr />
     <h4>Parameters</h4>
-    {% for p in op.parameters %}
-    <h5>{{p.name}} in {{p.in}} </h5>
-    <p>Its generation schema is {{p.schema}}</p>
+    <table class="table is-striped">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Included in</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in op.parameters %}
+        <tr>
+          <td>{{p.name}}</td>
+          <td>{{p.in}}</td>
+          <td>{{p.schema}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <!-- {% for p in op.parameters %} -->
+    <!-- <h5>{{p.name}} in {{p.in}} </h5> -->
+    <!-- <p>Its generation schema is {{p.schema}}</p> -->
 
 
-    {% endfor %}
+    <!-- {% endfor %} -->
 
     {% if op.examples|length > 0 %}
-    <h4>Examples</h4>
+    <h4 class="is-size-3">Usage examples of this API operation</h4>
     {% for e in op.examples %}
     <p class="title is-5">{{e.property}}</h5>
     <p class="subtitle is-7">{{e.description}}</p>
     {% if e.example.no-example %}
-    <p>No example found</p>
+    <p>No example found
+      <span class="subtitle is-size-7"> This might be expected behaviour on it might indicate a problem with the API.</span>
+      </p>
     <!-- <p>{{e.example}}</p> -->
     {% else %}
     {% for ex in e.example %}
@@ -43,7 +103,7 @@
     {% endfor %}
     {% else %}
     <p>No examples found</p>
-  {% endif %}
+    {% endif %}
   </div>
   {% endfor %}
 </div>
