@@ -5,7 +5,8 @@
             [quickrest.alpha.resource-access.domain.rest :as rar]
             [selmer.parser :as parser]
             [quickrest.alpha.resources.system-specification :as rsy]
-            [quickrest.alpha.engines.transformation.openapi-definitions :as eoas]))
+            [quickrest.alpha.engines.transformation.openapi-definitions :as eoas]
+            [quickrest.alpha.resource-access.domain.rest :as rst]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PoC of HTML-reporting
@@ -41,45 +42,49 @@
       (log/error (str "Could not open " filename " - " (.getMessage e)))
       (throw e))))
 
+(def temp (atom []))
+
 (defn operation->url
   [operation]
-  (let [params  (:operation/parameters operation)
+  (let [params      (:operation/parameters operation)
         parameter-map
-        (or (apply merge (map :parameter/value (:operation/parameters operation)))
+        (or (apply merge (map
+                          (fn [p]
+                            {(:parameter/name p) (first (vals (:parameter/value p)))})
+                          (:operation/parameters operation)))
             {})
+        raw-request (merge operation
+                           {:http/scheme  :http
+                            :request/host "server"
+                            :request/port 3000})
         ;; Use the invoke-url fn to resolve the parameters into an actual URL
-        request (rar/invoke-url (fn [r]
-                                  ;; Just echo the request
-                                  (println "REQUEST")
-                                  (clojure.pprint/pprint r)
-                                  r)
-                                (merge operation
-                                       {:http/scheme  :http
-                                        :request/host "server"
-                                        :request/port 3000})
-                                params
-                                parameter-map)]
+        request     (-> (rar/make-http-request
+                         raw-request
+                         params
+                         parameter-map)
+                        (update :url
+                                (fn [current-url]
+                                  (-> current-url
+                                      (rar/with-host raw-request)
+                                      (rar/with-scheme raw-request)))))]
     (cond
       (= :get (:method request))
-      (str "curl " (:url request))
+      (str "curl -X GET " (:url request))
       (= :post (:method request))
       (str "curl -X POST " (:url request))
       (= :put (:method request))
       (str "curl -X PUT " (:url request))
       (= :delete (:method request))
       (str "curl -X DELETE " (:url request))
-      :else
-      (do
-        (println "Unsupported")
-        (clojure.pprint/pprint request)
-        (clojure.pprint/pprint operation)
-        (str "Unsupported : " (:method request))))))
+      :else "Unsupported METHOD")))
 
 (defn property->presentation-str
   [property]
   (cond
     (= (:property/key property) :property/state-mutation-property)
     "State mutation"
+    (= (:property/key property) :property/state-identity-property)
+    "State identity"
     (= (:property/key property) :property/response-equality-property)
     "Response equality"
     :else
@@ -92,19 +97,19 @@
     "The response of this operation is changed with the following example"
     (= (:property/key property) :property/response-equality-property)
     "Calling this operation multiple times produce the same response"
+    (= (:property/key property) :property/state-identity-property)
+    "Calling this sequence bring the system back to the state of the first operation"
     :else ""))
 
 (defn example->presentation
   [{:exploration/keys [property] :as example}]
   {:property    (property->presentation-str property)
    :description (property-description property)
-   :raw         example
+   ;;:raw         example
    :example     (if (= (:operation/id (first (:exploration/example example)))
                        #uuid "deadbeef-dead-beef-dead-beef00000075")
                   {:no-example :found}
-                  (cond
-                    (= (:property/key property) :property/state-mutation-property)
-                    (mapv
+                  (mapv
                      (fn [ex]
                        (let [url (operation->url ex)]
                          {:url        url
@@ -115,22 +120,7 @@
                                                :in    (:http/in p)
                                                :value (:parameter/value p)})
                                             (:operation/parameters ex))}))
-                     (:exploration/example example))
-                    (= (:property/key property) :property/response-equality-property)
-                    (mapv
-                     (fn [ex]
-                       (let [url (operation->url ex)]
-                         {:url        url
-                          :name       (:info/name (:operation/info ex))
-                          :method     (clojure.string/upper-case (name (:http/method ex)))
-                          :parameters (mapv (fn [p]
-                                              {:name  (:parameter/name p)
-                                               :in    (:http/in p)
-                                               :value (:parameter/value p)})
-                                            (:operation/parameters ex))}))
-                     (:exploration/example example))
-                    :else 
-                    (println "Unsupported property")))})
+                     (:exploration/example example)))})
 
 (defn report-property
   []
@@ -139,8 +129,18 @@
                       (eoas/open-api-v2->amos
                        (fn [_] (random-uuid)) "Feature Service"))
         ops      (:amos/operations amos)
-        examples (into (read-examples "raw-data/70/out/response-equality.edn")
-                       (read-examples "raw-data/70/out/state-mutation.edn"))
+        examples (concat (read-examples "raw-data/70/out/response-equality.edn")
+                         (read-examples "raw-data/60/out/response-equality.edn")
+                         (read-examples "raw-data/64/out/response-equality.edn")
+                         (read-examples "./out/response-equality.edn")
+                         (read-examples "./out/state-mutation.edn")
+                         (read-examples "raw-data/70/out/state-mutation.edn")
+                         (read-examples "raw-data/60/out/state-mutation.edn")
+                         (read-examples "raw-data/64/out/state-mutation.edn")
+                         (read-examples "raw-data/70/out/state-identity.edn")
+                         (read-examples "raw-data/60/out/state-identity.edn")
+                         (read-examples "raw-data/64/out/state-identity.edn"))
+        
         ops-with-examples
         (map
          (fn [o]
@@ -154,25 +154,24 @@
                     op-k))
                examples))))
          ops)]
-    ;;{:examples (mapv example->presentation examples)}
     {:operations
      (mapv (fn [o]
              {:name       (:info/name (:operation/info o))
               :method     (name (:http/method o))
               :url        (:http/url o)
-              :parameters (mapv (fn [p]
-                                  {:name   (:parameter/name p)
-                                   :in     (name (:http/in p))
-                                   :schema
-                                   (let [schema (:data/schema p)]
-                                     (cond
-                                       (and (= :map (first schema))
-                                            (= (count schema) 2))
-                                       (name (last (last schema)))
-                                       :else
-                                       schema))})
-                                (:operation/parameters o))
-              :examples   (mapv example->presentation (:operation/examples o))})
+              :parameters (set (mapv (fn [p]
+                                       {:name (:parameter/name p)
+                                        :in   (name (:http/in p))
+                                        :schema
+                                        (let [schema (:data/schema p)]
+                                          (cond
+                                            (and (= :map (first schema))
+                                                 (= (count schema) 2))
+                                            (name (last (last schema)))
+                                            :else
+                                            schema))})
+                                     (:operation/parameters o)))
+              :examples   (set (mapv example->presentation (:operation/examples o)))})
            ops-with-examples)}
     ))
 
@@ -215,4 +214,38 @@
   (:amos/operations feature-service-amos)
   )
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Experiment with multi-merge
+
+;; amos     (->> (rsy/open-api-from-file-path
+;;                        "specifications/feature-service.json")
+;;                       (eoas/open-api-v2->amos
+;;                        (fn [_] (random-uuid)) "Feature Service"))
+;;         ops      (:amos/operations amos)
+;;         examples (into (read-examples "raw-data/70/out/response-equality.edn")
+;;                        (read-examples "raw-data/70/out/state-mutation.edn"))
+
+(defn amos-file-ops
+  [path]
+  (let [amos (->> (rsy/open-api-from-file-path path)
+                  (eoas/open-api-v2->amos
+                   (fn [_] (random-uuid)) "Feature Service"))
+        ops  (:amos/operations amos)]
+    ops))
+
+(defn operations-with-examples
+  [examples ops]
+  (map
+   (fn [o]
+     (let [op-k (:info/key (:operation/info o))]
+       (assoc
+        o
+        :operation/examples
+        (filterv
+         (fn [ex]
+           (= (:info/key (:operation/info (:explored/operation (:exploration/context ex))))
+              op-k))
+         examples))))
+   ops))
 
