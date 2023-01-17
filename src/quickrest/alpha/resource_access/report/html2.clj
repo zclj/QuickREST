@@ -6,7 +6,8 @@
             [selmer.parser :as parser]
             [quickrest.alpha.resources.system-specification :as rsy]
             [quickrest.alpha.engines.transformation.openapi-definitions :as eoas]
-            [quickrest.alpha.resource-access.domain.rest :as rst]))
+            [quickrest.alpha.resource-access.domain.rest :as rst]
+            [cheshire.core :as json]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PoC of HTML-reporting
@@ -53,10 +54,20 @@
                             {(:parameter/name p) (first (vals (:parameter/value p)))})
                           (:operation/parameters operation)))
             {})
+        form-parameters
+        (map (fn [p]
+               {(:parameter/name p) (first (vals (:parameter/value p)))})
+             (filter (fn [p] (= (:http/in p) :form-data))
+                     (:operation/parameters operation)))
         raw-request (merge operation
                            {:http/scheme  :http
                             :request/host "server"
                             :request/port 3000})
+        ;; _ (println (str "Parameter map : " parameter-map))
+        ;; _ (println (str "Parameters :"))
+        ;; _ (clojure.pprint/pprint params)
+        ;; _ (println (str "Form params"))
+        ;; _ (clojure.pprint/pprint form-parameters)
         ;; Use the invoke-url fn to resolve the parameters into an actual URL
         request     (-> (rar/make-http-request
                          raw-request
@@ -71,7 +82,11 @@
       (= :get (:method request))
       (str "curl -X GET " (:url request))
       (= :post (:method request))
-      (str "curl -X POST " (:url request))
+      (let [base (str "curl -X POST " (:url request))]
+        (if (seq form-parameters)
+          (str base " -H 'Content-Type: application/json' -d "
+               (json/generate-string (apply merge form-parameters)))
+          base))
       (= :put (:method request))
       (str "curl -X PUT " (:url request))
       (= :delete (:method request))
@@ -87,6 +102,8 @@
     "State identity"
     (= (:property/key property) :property/response-equality-property)
     "Response equality"
+    (= (:property/key property) :property/response-inequality-property)
+    "Response inequality"
     :else
     "Unsupported"))
 
@@ -97,6 +114,8 @@
     "The response of this operation is changed with the following example"
     (= (:property/key property) :property/response-equality-property)
     "Calling this operation multiple times produce the same response"
+    (= (:property/key property) :property/response-inequality-property)
+    "Calling this operation multiple times produce different responses"
     (= (:property/key property) :property/state-identity-property)
     "Calling this sequence bring the system back to the state of the first operation"
     :else ""))
@@ -132,6 +151,9 @@
         examples (concat (read-examples "raw-data/70/out/response-equality.edn")
                          (read-examples "raw-data/60/out/response-equality.edn")
                          (read-examples "raw-data/64/out/response-equality.edn")
+                         (read-examples "raw-data/70/out/response-inequality.edn")
+                         (read-examples "raw-data/60/out/response-inequality.edn")
+                         (read-examples "raw-data/64/out/response-inequality.edn")
                          (read-examples "./out/response-equality.edn")
                          (read-examples "./out/state-mutation.edn")
                          (read-examples "raw-data/70/out/state-mutation.edn")
