@@ -177,24 +177,47 @@
                examples))))
          ops)]
     {:operations
-     (mapv (fn [o]
-             {:name       (:info/name (:operation/info o))
-              :method     (name (:http/method o))
-              :url        (:http/url o)
-              :parameters (set (mapv (fn [p]
-                                       {:name (:parameter/name p)
-                                        :in   (name (:http/in p))
-                                        :schema
-                                        (let [schema (:data/schema p)]
-                                          (cond
-                                            (and (= :map (first schema))
-                                                 (= (count schema) 2))
-                                            (name (last (last schema)))
-                                            :else
-                                            schema))})
-                                     (:operation/parameters o)))
-              :examples   (set (mapv example->presentation (:operation/examples o)))})
-           ops-with-examples)}
+     (sort-by
+      :url
+      (mapv (fn [o]
+              {:name       (:info/name (:operation/info o))
+               :method     (name (:http/method o))
+               :url        (:http/url o)
+               :parameters (set (mapv (fn [p]
+                                        {:name (:parameter/name p)
+                                         :in   (name (:http/in p))
+                                         :schema
+                                         (let [schema (:data/schema p)]
+                                           (cond
+                                             (and (= :map (first schema))
+                                                  (= (count schema) 2))
+                                             (name (last (last schema)))
+                                             :else
+                                             schema))})
+                                      (:operation/parameters o)))
+               :examples
+               (sort-by
+                :property
+                (let [pexs (set (mapv example->presentation
+                                      (:operation/examples o)))]
+                  ;; Remove any empty examples where another instance has an example
+                  (->> (group-by :property pexs)
+                       (reduce-kv
+                        (fn [acc prop exs]
+                          ;; for each prop, 'no-example' only be included if size = 1
+                          ;; NOTE - if there would be more 'no-example', they
+                          ;; have already
+                          ;; been removed by the 'set', hence size = 1 holds
+                          (if (> (count exs) 1)
+                            (concat
+                             acc
+                             (filterv
+                              (fn [ex] (not= (:example ex) {:no-example :found})) exs))
+                            (concat acc exs)))
+                        [])
+                       )
+                  ))})
+            ops-with-examples))}
     ))
 
 (comment
@@ -205,6 +228,22 @@
   (->> (report-property)
        (report-page)
        (spit "report-out/report2.html"))
+
+  (def reported (report-property))
+
+  (->> (group-by :property (:examples (nth (:operations reported) 1)))
+       (reduce-kv
+        (fn [acc prop exs]
+          ;; for each prop, 'no-example' only be included if size = 1
+          ;; NOTE - if there would be more 'no-example', they have already
+          ;; been removed by the 'set', hence size = 1 holds
+          (if (> (count exs) 1)
+            (concat acc 
+                    (filterv
+                     (fn [ex] (not= (:example ex) {:no-example :found})) exs))
+            (concat acc exs)))
+        [])
+       )
   ;;;;
   
   ;; base the reporting on the generated examples in the out folder
