@@ -2,6 +2,7 @@
 target
 log
 out
+.DS_Store
 
 # clojure tooling
 .cpcache
