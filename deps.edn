@@ -55,7 +55,8 @@
                           org.babashka/sci           {:mvn/version "0.3.1"}
                           ;; https://github.com/gfredericks/test.chuck
                           com.gfredericks/test.chuck {:mvn/version "0.2.13"}
-                          }
+                          ;; https://github.com/djblue/portal
+                          djblue/portal {:mvn/version "0.35.1"}}
             :main-opts   []}
 
            :run-tests

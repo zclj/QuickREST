@@ -151,3 +151,27 @@
 
   (count (amos/operations (db) amos-id '[*]))
   )
+
+(comment
+
+  (require '[portal.api :as p])
+
+  (def p (p/open))
+
+  (add-tap #'p/submit)
+
+  (tap> :hello) ; Start tapping out values
+
+  (p/clear) ; Clear all values
+
+  (prn @p) ; bring selected value back into repl
+
+  (remove-tap #'p/submit) ; Remove portal from tap> targetset
+
+  (p/close) ; Close the inspector when done
+
+  (p/docs) ; View docs locally via Portal - jvm / node only
+
+  (tap> (amos/amoses (db) '[*]))
+  ;; https://cljdoc.org/d/djblue/portal/0.35.1/doc/guides/nrepl
+  )
