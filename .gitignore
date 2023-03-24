@@ -4,6 +4,9 @@ log
 out
 .DS_Store
 
+# Local Dev
+dev
+
 # clojure tooling
 .cpcache
 .nrepl-port
