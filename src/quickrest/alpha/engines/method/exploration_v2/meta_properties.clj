@@ -3,9 +3,7 @@
             [quickrest.alpha.engines.method.exploration-v2.meta-operation-generators
              :as mog]
             [quickrest.alpha.engines.method.exploration-v2.invocation :as inv]
-            [clojure.test.check.generators :as gen]
-            [clojure.tools.logging :as log]
-            [malli.generator :as mg]))
+            [clojure.tools.logging :as log]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utils

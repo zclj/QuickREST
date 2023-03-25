@@ -1,15 +1,9 @@
 (ns quickrest.alpha.engines.method.exploration-v2
-  (:require [clojure.test.check.properties :as prop]
-            [clojure.test.check.generators :as gen]
-            [clojure.test.check.results :as results]
-            [clojure.test.check :as tc]
-            [quickrest.alpha.engines.method.exploration-v2.meta-operation-generators
-             :as mog]
+  (:require [clojure.test.check :as tc]
             [quickrest.alpha.engines.method.exploration-v2.meta-properties :as mp]
             [clojure.tools.logging :as log]
             [quickrest.alpha.engines.method.exploration-v2.invocation :as inv]
             [quickrest.alpha.resource-access.domain.rest :as rar]
-            [quickrest.alpha.resources.exploration.result :as rer]
             [quickrest.alpha.engines.method.result.exploration :as emres]
             [clj-http.client :as http]
             [cheshire.core :as json]))
